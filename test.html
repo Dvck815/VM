@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { background-color: red; font-family: sans-serif; }
+        h1 { color: white; }
+    </style>
+</head>
+<body>
+    <h1>Hello from the Cloud Browser!</h1>
+    <p>If you can see this, the rendering engine is working.</p>
+    <p>Time: <span id="time"></span></p>
+    <script>
+        setInterval(() => {
+            document.getElementById('time').innerText = new Date().toLocaleTimeString();
+        }, 1000);
+    </script>
+</body>
+</html>

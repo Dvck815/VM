@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote Browser</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background-color: #202124;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        #controls {
+            height: 40px;
+            background: #35363a;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        #url-bar {
+            flex-grow: 1;
+            padding: 5px 10px;
+            border-radius: 20px;
+            border: none;
+            background: #202124;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+        #go-btn {
+            margin-left: 10px;
+            padding: 5px 15px;
+            background: #8ab4f8;
+            color: #202124;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #viewport {
+            width: 100%;
+            height: calc(100% - 40px);
+            display: block;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <input type="text" id="url-bar" placeholder="https://..." value="https://google.com">
+        <button id="go-btn">Go</button>
+    </div>
+    
+    <!-- The MJPEG Stream -->
+    <img id="viewport" src="/stream.mjpeg" draggable="false">
+
+    <script>
+        const viewport = document.getElementById('viewport');
+        const urlBar = document.getElementById('url-bar');
+        const goBtn = document.getElementById('go-btn');
+
+        // Navigation
+        function navigate() {
+            const url = urlBar.value;
+            fetch(`/navigate?url=${encodeURIComponent(url)}`);
+        }
+
+        goBtn.onclick = navigate;
+        urlBar.onkeydown = (e) => { if (e.key === 'Enter') navigate(); };
+
+        // Handle Click with Coordinate Scaling
+        viewport.onmousedown = (e) => {
+            if (!viewport.naturalWidth) return; 
+
+            const rect = viewport.getBoundingClientRect();
+            
+            // 1. Get click position relative to the image element on screen
+            const clientX = e.clientX - rect.left;
+            const clientY = e.clientY - rect.top;
+            
+            // 2. Calculate scale factor (Server Image Size / displayed size)
+            const scaleX = viewport.naturalWidth / rect.width;
+            const scaleY = viewport.naturalHeight / rect.height;
+            
+            // 3. Transform to server coordinates
+            const realX = Math.round(clientX * scaleX);
+            const realY = Math.round(clientY * scaleY);
+            
+            fetch(`/click?x=${realX}&y=${realY}`);
+        };
+
+        // Keyboard Interactions
+        document.onkeydown = (e) => {
+            // Only send keys if not typing in the URL bar
+            if (document.activeElement !== urlBar) {
+                // Prevent default browser actions for some keys (like backspace going back)
+                if(e.key === "Backspace" || e.key.startsWith("Arrow") || e.key === "Tab") {
+                    e.preventDefault();
+                }
+                fetch(`/type?key=${encodeURIComponent(e.key)}`);
+            }
+        };
+    </script>
+</body>
+</html>
